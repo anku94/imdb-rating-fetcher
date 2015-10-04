@@ -7,9 +7,13 @@ Does not support TV shows yet. Might work incorrectly if given folder has TV sho
 
 Install dependencies first:
 
+```
 sudo pip install imdbpy
 sudo pip install progressbar
+```
 
 Run as:
 
+```
 python rate.py /path/to/movies/folder
+```
