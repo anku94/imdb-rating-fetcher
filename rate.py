@@ -70,9 +70,6 @@ def retrieve_candidate_ratings(movieName):
         info.append((name, rating))
     return (movieName, info)
 
-filenames = get_all_unique_movie_strings(sys.argv[1])
-#print retrieve_candidate_ratings(filenames[0])
-
 def mock_map():
     f = open('data', 'rb').read()
     obj = pickle.loads(f)
@@ -90,6 +87,11 @@ def pretty_print(res):
     return
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print "\n\t", "Usage: python", sys.argv[0], "/path/to/movie/folder", "\n"
+        sys.exit(-1)
+
+    filenames = get_all_unique_movie_strings(sys.argv[1])
     p = Pool(20)
     results = []
     res = p.map_async(retrieve_candidate_ratings, filenames, callback=results.append)
