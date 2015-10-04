@@ -1,3 +1,4 @@
+import atexit
 import os, imdb, re
 import sys
 import pdb
@@ -6,21 +7,13 @@ import pickle
 import time
 from progressbar import ProgressBar, SimpleProgress, Bar, Percentage
 
-delimiters = "(){}[].-"
+import Cache, PrettyPrint, Ranker
+
+delimiters = "(){}[].-_"
 delimiters = list(delimiters)
 regexPattern = '|'.join(map(re.escape, delimiters))
 
 VALID_MOVIE_FORMATS = ['mp4', 'mkv', 'avi', 'wmv', 'mov', 'flv', '3gp', 'webm', 'mpg', 'mpeg']
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
 def get_publish_year(name):
     res = re.findall(r'(20\d\d|19\d\d)', name)
@@ -70,28 +63,7 @@ def retrieve_candidate_ratings(movieName):
         info.append((name, rating))
     return (movieName, info)
 
-def mock_map():
-    f = open('data', 'rb').read()
-    obj = pickle.loads(f)
-    return obj 
-
-def pretty_print(res):
-    for movieItem in res:
-        movieName = movieItem[0]
-        movieData = movieItem[1]
-        if len(movieData) > 0:
-            print bcolors.OKGREEN + movieName + bcolors.ENDC
-            for dataItem in movieData:
-                if dataItem[1] != 'Not Found':
-                    print "\t", dataItem[0], '-', bcolors.OKBLUE + str(dataItem[1]) + bcolors.ENDC
-    return
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print "\n\t", "Usage: python", sys.argv[0], "/path/to/movie/folder", "\n"
-        sys.exit(-1)
-
-    filenames = get_all_unique_movie_strings(sys.argv[1])
+def fetch_imdb(filenames):
     p = Pool(20)
     results = []
     res = p.map_async(retrieve_candidate_ratings, filenames, callback=results.append)
@@ -105,5 +77,58 @@ if __name__ == "__main__":
         pbar.update(DONE);
         time.sleep(1)
     pbar.finish()
-    pretty_print(results[0])
     p.close()
+    return results[0]
+
+def get_fresh_data(path):
+    filenames = get_all_unique_movie_strings(path)
+    return fetch_imdb(filenames)
+
+def handle_p():
+    if not c.has_key(path):
+        handle_r()
+    pp.pp(ranker.rank(c.get_key(path)))
+
+def handle_q():
+    sys.exit(0)
+
+def handle_r():
+    data = get_fresh_data(path)
+    c.update_key(path, data)
+
+def print_prompt():
+    print "[P]: Print, [Q]: Quit, [R]: Refetch --- ",
+
+def get_command():
+    cmd = raw_input()
+    cmd = cmd.lower()
+
+    if cmd == 'p':
+        handle_p()
+    elif cmd == 'q':
+        handle_q()
+    elif cmd == 'r':
+        handle_r()
+
+def run_ui():
+    while True:
+        print_prompt()
+        get_command()
+    pass
+
+def cleanup():
+    c.close()
+
+if __name__ == "__main__":
+    c = Cache.Cache()
+    pp = PrettyPrint.PrettyPrint()
+    ranker = Ranker.Ranker()
+
+    atexit.register(cleanup)
+
+    if len(sys.argv) < 2:
+        print "\n\t", "Usage: python", sys.argv[0], "/path/to/movie/folder", "\n"
+        sys.exit(-1)
+
+    path = sys.argv[1]
+    run_ui()

@@ -15,5 +15,5 @@ sudo pip install progressbar
 Run as:
 
 ```
-python rate.py /path/to/movies/folder
+python main.py /path/to/movies/folder
 ```
